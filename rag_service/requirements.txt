@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+embed-anything
+upstash-vector
+langchain-text-splitters
+langchain-community
+pypdf
+python-multipart
