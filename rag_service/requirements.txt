@@ -6,3 +6,6 @@ langchain-text-splitters
 langchain-community
 pypdf
 python-multipart
+python-docx
+pdf2image
+pytesseract

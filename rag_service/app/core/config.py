@@ -14,6 +14,7 @@ class Settings:
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "1000"))
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "150"))
     top_k_default: int = int(os.getenv("TOP_K_DEFAULT", "5"))
+    embedding_dimension: int = int(os.getenv("EMBEDDING_DIMENSION", "512"))
 
 
 @lru_cache

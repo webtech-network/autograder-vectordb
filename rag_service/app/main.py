@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 
-from app.api.routes import router as api_router
+from app.api.routes import (
+    index_management_router,
+    vector_ingestion_router,
+    vector_operations_router,
+)
 
 
 app = FastAPI(
@@ -20,13 +24,23 @@ app = FastAPI(
             "description": "Health and system readiness endpoints.",
         },
         {
-            "name": "Knowledge Base",
-            "description": "Document ingestion and semantic retrieval endpoints.",
+            "name": "Index Management",
+            "description": "CRUD operations for indexes.",
+        },
+        {
+            "name": "Vector Ingestion",
+            "description": "Create, update, and delete vectors (no read).",
+        },
+        {
+            "name": "Vector Operations",
+            "description": "Search operations for vectors.",
         },
     ],
 )
 
-app.include_router(api_router)
+app.include_router(index_management_router)
+app.include_router(vector_ingestion_router)
+app.include_router(vector_operations_router)
 
 
 @app.get(

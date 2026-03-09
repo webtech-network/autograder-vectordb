@@ -21,7 +21,7 @@ This improves answer grounding and consistency by using curated, static document
 - **Vector DB:** Upstash Vector (used as a pure vector store)
 - **Embedding Engine:** `embed-anything` (local embedding generation)
 - **Chunking:** `RecursiveCharacterTextSplitter` from `langchain-text-splitters`
-- **Document parsing:** `pypdf` for PDFs, UTF-8 decode fallback for text-like files
+- **Document parsing:** `pypdf` for PDFs (with OCR fallback via pdf2image + pytesseract), `python-docx` for DOCX, UTF-8 decode for text-like files
 - **Ingestion strategy:** Static assignment data only (Hybrid Split strategy)
 
 ### Request flow
@@ -44,8 +44,12 @@ rag_service/
 ├── app/
 │   ├── main.py                # FastAPI app + OpenAPI metadata
 │   ├── api/
-│   │   ├── routes.py          # /ingest and /query endpoints
-│   │   └── schemas.py         # Pydantic request/response models
+│   │   ├── deps.py            # Shared dependencies (service getters)
+│   │   ├── schemas.py         # Pydantic request/response models
+│   │   └── routes/
+│   │       ├── index_management.py   # CRUD for indexes
+│   │       ├── vector_ingestion.py   # CUD for vectors (ingest, upsert)
+│   │       └── vector_operations.py  # Search operations
 │   ├── core/
 │   │   └── config.py          # Environment-backed settings
 │   └── services/
@@ -77,6 +81,7 @@ TOP_K_DEFAULT=5
 
 - `UPSTASH_URL`: Upstash Vector REST URL
 - `UPSTASH_TOKEN`: Upstash Vector token
+- `INDEX_REGISTRY_DIR`: Directory for index metadata (default: `/tmp/rag_index_registry`). Use a persistent path in production.
 - `EMBEDDING_MODEL_ID`: model identifier used by `embed-anything`
 - `CHUNK_SIZE`: target chunk length for splitting
 - `CHUNK_OVERLAP`: overlap between adjacent chunks
@@ -96,6 +101,11 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+**PDF OCR (optional):** For scanned PDF support, install system dependencies:
+
+- **macOS:** `brew install poppler tesseract`
+- **Ubuntu/Debian:** `apt-get install poppler-utils tesseract-ocr`
+
 Service URLs:
 
 - Swagger UI: `http://localhost:8000/docs`
@@ -105,6 +115,95 @@ Service URLs:
 ---
 
 ## API endpoints
+
+### Index management
+
+Clients can create indexes and store/retrieve embeddings per index.
+
+#### `POST /indexes`
+
+Create a new index.
+
+Request body:
+
+```json
+{
+  "name": "my-assignment-index",
+  "dimension": 384
+}
+```
+
+- `name`: Unique index name
+- `dimension`: Vector dimension (default 384 for all-MiniLM-L12-v2)
+
+#### `GET /indexes`
+
+List all registered indexes.
+
+#### `GET /indexes/{index_name}`
+
+Get metadata for a specific index.
+
+#### `DELETE /indexes/{index_name}`
+
+Delete an index and all its vectors.
+
+#### `POST /indexes/{index_name}/vectors`
+
+Store embeddings in an index. Provide either pre-computed vectors or texts to embed.
+
+Request body (vectors):
+
+```json
+{
+  "vectors": [
+    {
+      "id": "vec-1",
+      "vector": [0.1, 0.2, ...],
+      "metadata": {"source": "doc1"},
+      "data": "Optional stored text"
+    }
+  ]
+}
+```
+
+Request body (texts to embed):
+
+```json
+{
+  "texts": [
+    {
+      "id": "vec-1",
+      "text": "Content to embed",
+      "metadata": {"source": "doc1"}
+    }
+  ]
+}
+```
+
+#### `POST /indexes/{index_name}/query`
+
+Retrieve similar embeddings. Provide either a query vector or text.
+
+Request body:
+
+```json
+{
+  "vector": [0.1, 0.2, ...],
+  "top_k": 5
+}
+```
+
+Or with text (service embeds it):
+
+```json
+{
+  "text": "What libraries are disallowed?",
+  "top_k": 5
+}
+```
+
+---
 
 ### `GET /health`
 
@@ -120,7 +219,7 @@ Response:
 
 ### `POST /ingest`
 
-Uploads files and ingests them into vector storage.
+Uploads files and ingests them into vector storage. Supports `.md`, `.txt`, `.pdf`, and `.docx`. PDFs use OCR fallback when text extraction yields little content (e.g. scanned documents).
 
 - Content type: `multipart/form-data`
 - Form fields:
@@ -144,6 +243,44 @@ Example response:
   "file_count": 2,
   "chunk_count": 26,
   "upserted_count": 26
+}
+```
+
+### `POST /ingest/text`
+
+Ingest raw text directly (no file upload). Text is split, embedded, and stored.
+
+Request body:
+
+```json
+{
+  "assignment_id": "cs101-a1",
+  "text": "Your raw text content here...",
+  "source": "raw-text"
+}
+```
+
+- `assignment_id`: Assignment scope for metadata filtering
+- `text`: Raw text to split and embed
+- `source`: Optional label (default: `raw-text`)
+
+### `POST /ingest/vectors`
+
+Ingest pre-computed embedding vectors. Vector dimension must match the embedding model (default 384).
+
+Request body:
+
+```json
+{
+  "assignment_id": "cs101-a1",
+  "vectors": [
+    {
+      "id": "vec-1",
+      "vector": [0.1, 0.2, ...],
+      "metadata": {"source": "api"},
+      "data": "Optional stored text"
+    }
+  ]
 }
 ```
 
