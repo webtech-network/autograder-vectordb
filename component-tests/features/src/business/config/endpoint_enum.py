@@ -1,0 +1,17 @@
+from enum import Enum
+
+
+class EndpointEnum(Enum):
+    LOCAL_API_HOST = "http://localhost:8000"
+
+    LOCAL_API_HEALTHCHECK_ENDPOINT = LOCAL_API_HOST + "/health"
+    LOCAL_API_CREATE_INDEX_ENDPOINT = LOCAL_API_HOST + "/indexes"
+    LOCAL_API_LIST_INDEXES_ENDPOINT = LOCAL_API_HOST + "/indexes"
+    LOCAL_API_GET_INDEX_TEMPLATE = LOCAL_API_HOST + "/indexes/{index_name}"
+    LOCAL_API_DELETE_INDEX_TEMPLATE = LOCAL_API_HOST + "/indexes/{index_name}"
+    LOCAL_API_INGEST_DOCUMENTS_ENDPOINT = LOCAL_API_HOST + "/ingest"
+    LOCAL_API_INGEST_TEXT_ENDPOINT = LOCAL_API_HOST + "/ingest/text"
+    LOCAL_API_INGEST_VECTORS_ENDPOINT = LOCAL_API_HOST + "/ingest/vectors"
+    LOCAL_API_UPSERT_VECTORS_TEMPLATE = LOCAL_API_HOST + "/indexes/{index_name}/vectors"
+    LOCAL_API_QUERY_ENDPOINT = LOCAL_API_HOST + "/query"
+    LOCAL_API_QUERY_INDEX_TEMPLATE = LOCAL_API_HOST + "/indexes/{index_name}/query"

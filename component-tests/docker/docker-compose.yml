@@ -1,0 +1,16 @@
+networks:
+  tests-autograder-vectordb-net:
+    driver: bridge
+
+services:
+  tests-autograder-vectordb-api:
+    build:
+      context: ../../
+      dockerfile: component-tests/docker/Dockerfile.api.component-tests
+    image: tests-autograder-vectordb-api:latest
+    env_file:
+      - docker-env/api.env
+    ports:
+      - "8000:8000"
+    networks:
+      - tests-autograder-vectordb-net
