@@ -15,6 +15,8 @@ class Settings:
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "150"))
     top_k_default: int = int(os.getenv("TOP_K_DEFAULT", "5"))
     embedding_dimension: int = int(os.getenv("EMBEDDING_DIMENSION", "512"))
+    max_file_size_mb: int = int(os.getenv("MAX_FILE_SIZE_MB", "10"))
+    max_files_per_request: int = int(os.getenv("MAX_FILES_PER_REQUEST", "10"))
 
 
 @lru_cache

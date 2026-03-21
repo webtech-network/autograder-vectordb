@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.errors import register_error_handlers
 from app.api.routes import (
     index_management_router,
     vector_ingestion_router,
@@ -41,6 +42,8 @@ app = FastAPI(
 app.include_router(index_management_router)
 app.include_router(vector_ingestion_router)
 app.include_router(vector_operations_router)
+
+register_error_handlers(app)
 
 
 @app.get(

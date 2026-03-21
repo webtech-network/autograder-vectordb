@@ -86,6 +86,8 @@ TOP_K_DEFAULT=5
 - `CHUNK_SIZE`: target chunk length for splitting
 - `CHUNK_OVERLAP`: overlap between adjacent chunks
 - `TOP_K_DEFAULT`: default retrieval count (currently request-level `top_k` also supported)
+- `MAX_FILE_SIZE_MB`: maximum allowed file size in MB for ingestion (default: `10`)
+- `MAX_FILES_PER_REQUEST`: maximum number of files per ingestion request (default: `10`)
 
 ---
 
@@ -369,3 +371,26 @@ docker run --rm -p 8000:8000 --env-file .env autograder-rag-service
 - Re-ingesting the same documents produces new chunk IDs if chunk content changes.
 - This service currently supports text extraction from PDF and text-like files.
 - For best retrieval quality, keep source docs clean and structured.
+
+---
+
+## Upload limits
+
+File ingestion (`POST /ingest`) enforces the following limits:
+
+- **Max file size:** 10 MB per file (configurable via `MAX_FILE_SIZE_MB`)
+- **Max files per request:** 10 (configurable via `MAX_FILES_PER_REQUEST`)
+
+Files exceeding the size limit are rejected with HTTP 413 before any processing occurs.
+
+---
+
+## Architecture decision: synchronous ingestion
+
+The ingestion pipeline (upload → text extraction → chunking → embedding → upsert) runs synchronously within a single HTTP request. This was a deliberate choice given the current usage pattern:
+
+- Ingestions are infrequent — instructors upload files only when creating or updating an activity.
+- Concurrency is low — typically one instructor at a time per course.
+- The upload size cap (10 MB) bounds memory usage and processing time.
+
+**If usage patterns change** — e.g. a higher number of concurrent users, more frequent ingestions, or significantly larger files — this architecture would need to be refactored. The expected migration path would be: accept the upload, persist the file to object storage (e.g. S3), return a job ID immediately, and process asynchronously via a task queue. This would decouple upload latency from processing time and enable retries without re-uploading.

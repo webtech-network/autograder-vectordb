@@ -3,7 +3,7 @@
 import hashlib
 from typing import Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 
 from app.api.schemas import (
     IngestResponse,
@@ -16,6 +16,14 @@ from app.api.deps import (
     get_embedding_service,
     get_text_splitter_service,
     get_vector_store_service,
+)
+from app.api.errors import (
+    DimensionMismatchError,
+    FileTooLargeError,
+    IndexNotFoundError,
+    IngestionError,
+    NoExtractableTextError,
+    TooManyFilesError,
 )
 from app.core.config import Settings, get_settings
 from app.services.document_loader import DocumentLoaderService
@@ -49,9 +57,22 @@ async def ingest_documents(
     ),
 ) -> IngestResponse:
     if not files:
-        raise HTTPException(status_code=400, detail="At least one file is required.")
+        raise IngestionError("At least one file is required.")
 
     settings: Settings = get_settings()
+    max_bytes = settings.max_file_size_mb * 1024 * 1024
+
+    if len(files) > settings.max_files_per_request:
+        raise TooManyFilesError(
+            f"Too many files. Maximum is {settings.max_files_per_request} per request."
+        )
+
+    for upload in files:
+        if upload.size is not None and upload.size > max_bytes:
+            raise FileTooLargeError(
+                f"File '{upload.filename}' exceeds the {settings.max_file_size_mb}MB limit."
+            )
+
     embedding_service = get_embedding_service()
     vector_store = get_vector_store_service()
     splitter = get_text_splitter_service()
@@ -82,7 +103,7 @@ async def ingest_documents(
             )
 
     if not all_chunks:
-        raise HTTPException(status_code=400, detail="No extractable text found in uploaded files.")
+        raise NoExtractableTextError("No extractable text found in uploaded files.")
 
     vectors = embedding_service.embed_texts(all_chunks)
     upserted_count = vector_store.upsert_chunks(
@@ -120,7 +141,7 @@ async def ingest_raw_text(request: IngestTextRequest) -> IngestResponse:
 
     chunks = splitter.split_text(request.text)
     if not chunks:
-        raise HTTPException(status_code=400, detail="No chunks produced from text.")
+        raise IngestionError("No chunks produced from text.")
 
     source_hash = hashlib.sha1(request.source.encode("utf-8")).hexdigest()[:10]
     all_metadata: list[dict[str, Any]] = []
@@ -173,9 +194,8 @@ async def ingest_raw_vectors(request: IngestVectorsRequest) -> IngestResponse:
     payload: list[tuple[str, list[float], dict[str, Any] | None, str | None]] = []
     for v in request.vectors:
         if len(v.vector) != embedding_dim:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Vector dimension {len(v.vector)} does not match expected {embedding_dim}.",
+            raise DimensionMismatchError(
+                f"Vector dimension {len(v.vector)} does not match expected {embedding_dim}."
             )
         meta = dict(v.metadata) if v.metadata else {}
         meta["model_id"] = settings.embedding_model_id
@@ -208,18 +228,12 @@ async def ingest_raw_vectors(request: IngestVectorsRequest) -> IngestResponse:
 async def upsert_vectors(index_name: str, request: UpsertVectorsRequest) -> UpsertVectorsResponse:
     info = registry_get_index(index_name)
     if info is None:
-        raise HTTPException(status_code=404, detail=f"Index '{index_name}' not found.")
+        raise IndexNotFoundError(f"Index '{index_name}' not found.")
 
     if request.vectors and request.texts:
-        raise HTTPException(
-            status_code=400,
-            detail="Provide either 'vectors' or 'texts', not both.",
-        )
+        raise IngestionError("Provide either 'vectors' or 'texts', not both.")
     if not request.vectors and not request.texts:
-        raise HTTPException(
-            status_code=400,
-            detail="Provide either 'vectors' or 'texts'.",
-        )
+        raise IngestionError("Provide either 'vectors' or 'texts'.")
 
     vector_store = get_vector_store_service()
     embedding_service = get_embedding_service()
@@ -229,9 +243,8 @@ async def upsert_vectors(index_name: str, request: UpsertVectorsRequest) -> Upse
     if request.vectors:
         for v in request.vectors:
             if len(v.vector) != info.dimension:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Vector dimension {len(v.vector)} does not match index dimension {info.dimension}.",
+                raise DimensionMismatchError(
+                    f"Vector dimension {len(v.vector)} does not match index dimension {info.dimension}."
                 )
             payload.append((v.id, v.vector, v.metadata, v.data))
 
@@ -240,9 +253,8 @@ async def upsert_vectors(index_name: str, request: UpsertVectorsRequest) -> Upse
         vectors = embedding_service.embed_texts(texts)
         for t, vec in zip(request.texts, vectors, strict=True):
             if len(vec) != info.dimension:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Embedding dimension {len(vec)} does not match index dimension {info.dimension}.",
+                raise DimensionMismatchError(
+                    f"Embedding dimension {len(vec)} does not match index dimension {info.dimension}."
                 )
             payload.append((t.id, vec, t.metadata, t.text))
 

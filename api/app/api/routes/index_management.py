@@ -1,8 +1,9 @@
 """Index management routes (CRUD operations for indexes)."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.api.deps import get_vector_store_service
+from app.api.errors import IndexAlreadyExistsError, IndexNotFoundError
 from app.api.schemas import CreateIndexRequest, IndexResponse, ListIndexesResponse
 from app.services.index_registry import (
     create_index as registry_create_index,
@@ -28,7 +29,7 @@ async def create_index(request: CreateIndexRequest) -> IndexResponse:
     try:
         info = registry_create_index(name=request.name, dimension=request.dimension)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise IndexAlreadyExistsError(str(e))
     return IndexResponse(
         name=info.name,
         dimension=info.dimension,
@@ -64,7 +65,7 @@ async def list_indexes() -> ListIndexesResponse:
 async def get_index(index_name: str) -> IndexResponse:
     info = registry_get_index(index_name)
     if info is None:
-        raise HTTPException(status_code=404, detail=f"Index '{index_name}' not found.")
+        raise IndexNotFoundError(f"Index '{index_name}' not found.")
     return IndexResponse(
         name=info.name,
         dimension=info.dimension,
@@ -84,7 +85,7 @@ async def get_index(index_name: str) -> IndexResponse:
 async def delete_index(index_name: str) -> dict[str, str | int]:
     info = registry_get_index(index_name)
     if info is None:
-        raise HTTPException(status_code=404, detail=f"Index '{index_name}' not found.")
+        raise IndexNotFoundError(f"Index '{index_name}' not found.")
     vector_store = get_vector_store_service()
     deleted_count = vector_store.delete_by_index(index_name)
     registry_delete_index(index_name)
