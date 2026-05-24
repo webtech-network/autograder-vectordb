@@ -186,4 +186,8 @@ class VectorStoreService:
     def delete_by_index(self, index_name: str) -> int:
         """Delete all vectors in an index. Returns number of deleted vectors."""
         response = self._index.delete(filter=f"index_name = '{_escape_filter_value(index_name)}'")
-        return int(response.get("deleted", 0))
+        if hasattr(response, "deleted"):
+            return int(response.deleted)
+        if isinstance(response, dict):
+            return int(response.get("deleted", 0))
+        return 0

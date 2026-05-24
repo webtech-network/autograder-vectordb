@@ -1,9 +1,6 @@
-"""Service for generating text embeddings using embed-anything."""
+"""Service for generating text embeddings using sentence-transformers."""
 
-from collections.abc import Iterable
-from typing import Any
-
-from embed_anything import EmbeddingModel, WhichModel, embed_query
+from sentence_transformers import SentenceTransformer
 
 
 class EmbeddingService:
@@ -15,10 +12,7 @@ class EmbeddingService:
         Args:
             model_id: HuggingFace model identifier (e.g. sentence-transformers/all-MiniLM-L12-v2).
         """
-        self._embedder = EmbeddingModel.from_pretrained_local(
-            WhichModel.Bert,
-            model_id=model_id,
-        )
+        self._model = SentenceTransformer(model_id)
 
     def embed_text(self, text: str) -> list[float]:
         """Embed a single text string into a vector.
@@ -29,8 +23,8 @@ class EmbeddingService:
         Returns:
             A list of floats representing the embedding vector.
         """
-        vectors = self.embed_texts([text])
-        return vectors[0]
+        embedding = self._model.encode(text)
+        return embedding.tolist()
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Embed multiple text strings into vectors.
@@ -43,25 +37,5 @@ class EmbeddingService:
         """
         if not texts:
             return []
-        raw_embeddings = embed_query(texts, embedder=self._embedder)
-        return [self._coerce_embedding(item) for item in raw_embeddings]
-
-    @staticmethod
-    def _coerce_embedding(item: Any) -> list[float]:
-        """Normalize embed-anything output to a list of floats.
-
-        Args:
-            item: Raw embedding output (object with .embedding or iterable).
-
-        Returns:
-            List of floats.
-
-        Raises:
-            ValueError: If the output format is unsupported.
-        """
-        if hasattr(item, "embedding"):
-            embedding = getattr(item, "embedding")
-            return [float(value) for value in embedding]
-        if isinstance(item, Iterable):
-            return [float(value) for value in item]
-        raise ValueError("Unsupported embedding output format from embed-anything.")
+        embeddings = self._model.encode(texts)
+        return embeddings.tolist()

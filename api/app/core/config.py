@@ -18,6 +18,11 @@ class Settings:
     max_file_size_mb: int = int(os.getenv("MAX_FILE_SIZE_MB", "10"))
     max_files_per_request: int = int(os.getenv("MAX_FILES_PER_REQUEST", "10"))
 
+    # DynamoDB settings
+    dynamodb_table_name: str = os.getenv("DYNAMODB_TABLE_NAME", "rag-index-registry")
+    dynamodb_endpoint_url: str = os.getenv("DYNAMODB_ENDPOINT_URL", "")
+    aws_region: str = os.getenv("AWS_REGION", "us-east-1")
+
 
 @lru_cache
 def get_settings() -> Settings:

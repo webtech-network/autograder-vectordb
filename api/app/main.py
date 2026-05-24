@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.api.errors import register_error_handlers
@@ -6,6 +8,13 @@ from app.api.routes import (
     vector_ingestion_router,
     vector_operations_router,
 )
+from app.services.index_registry import _ensure_table_exists
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _ensure_table_exists()
+    yield
 
 
 app = FastAPI(
@@ -13,9 +22,10 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "RAG microservice for static assignment knowledge retrieval. "
-        "This service generates embeddings locally using embed-anything and "
+        "This service generates embeddings locally using sentence-transformers and "
         "stores raw vectors in Upstash Vector."
     ),
+    lifespan=lifespan,
     contact={
         "name": "Autograder Platform Team",
     },
