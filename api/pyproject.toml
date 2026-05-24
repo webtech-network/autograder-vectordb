@@ -1,0 +1,19 @@
+[project]
+name = "autograder-vectordb-api"
+version = "0.1.0"
+description = "RAG service API for autograder vector database"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sentence-transformers",
+    "upstash-vector",
+    "langchain-text-splitters",
+    "langchain-community",
+    "pypdf",
+    "python-multipart",
+    "python-docx",
+    "pdf2image",
+    "pytesseract",
+    "boto3",
+]
