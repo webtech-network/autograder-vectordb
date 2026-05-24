@@ -1,0 +1,25 @@
+meta {
+  name: Ingest Vectors
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/ingest/vectors
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "assignment_id": "cs101-a1",
+    "vectors": [
+      {
+        "id": "vec-001",
+        "vector": [0.1, 0.2, 0.3],
+        "metadata": {"source": "manual"},
+        "data": "Sample text for this vector"
+      }
+    ]
+  }
+}

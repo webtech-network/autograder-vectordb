@@ -1,0 +1,16 @@
+meta {
+  name: Ingest Documents
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/ingest
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  assignment_id: cs101-a1
+  files: @file(/path/to/your/document.pdf)
+}

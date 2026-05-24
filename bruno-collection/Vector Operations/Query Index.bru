@@ -1,0 +1,18 @@
+meta {
+  name: Query Index
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/indexes/my-assignment-index/query
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": "How should recursion depth be handled?",
+    "top_k": 5
+  }
+}

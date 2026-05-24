@@ -1,0 +1,19 @@
+meta {
+  name: Ingest Text
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/ingest/text
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "assignment_id": "cs101-a1",
+    "text": "Students may not use numpy or pandas for Assignment 1. All solutions must use only the Python standard library.",
+    "source": "assignment-spec.md"
+  }
+}
