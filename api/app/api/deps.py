@@ -1,26 +1,25 @@
 """Shared dependencies for API route handlers."""
 
-from functools import lru_cache
-
 from app.core.config import get_settings
 from app.services.embedding import EmbeddingService
 from app.services.text_splitter import TextSplitterService
 from app.services.vector_store import VectorStoreService
 
 
-@lru_cache
 def get_embedding_service() -> EmbeddingService:
     settings = get_settings()
-    return EmbeddingService(model_id=settings.embedding_model_id)
+    return EmbeddingService(
+        model_id=settings.embedding_model_id,
+        api_key=settings.openai_api_key,
+        dimensions=settings.embedding_dimension,
+    )
 
 
-@lru_cache
 def get_vector_store_service() -> VectorStoreService:
     settings = get_settings()
     return VectorStoreService(url=settings.upstash_url, token=settings.upstash_token)
 
 
-@lru_cache
 def get_text_splitter_service() -> TextSplitterService:
     settings = get_settings()
     return TextSplitterService(

@@ -114,7 +114,7 @@ class QueryResponse(BaseModel):
                             "filename": "assignment-spec.md",
                             "chunk_index": 0,
                             "chunk_id": "cs101-a1-3fbc0f07f0-0-3324150f772e",
-                            "model_id": "sentence-transformers/all-MiniLM-L12-v2",
+                            "model_id": "text-embedding-3-small",
                         },
                     }
                 ],

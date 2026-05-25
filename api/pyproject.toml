@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
-    "sentence-transformers",
+    "openai",
     "upstash-vector",
     "langchain-text-splitters",
     "langchain-community",

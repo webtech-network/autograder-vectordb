@@ -71,7 +71,7 @@ Create/update `rag_service/.env`:
 ```env
 UPSTASH_URL=<your-upstash-vector-url>
 UPSTASH_TOKEN=<your-upstash-token>
-EMBEDDING_MODEL_ID=sentence-transformers/all-MiniLM-L12-v2
+EMBEDDING_MODEL_ID=text-embedding-3-small
 CHUNK_SIZE=1000
 CHUNK_OVERLAP=150
 TOP_K_DEFAULT=5
@@ -328,7 +328,7 @@ Example response:
         "filename": "assignment-spec.md",
         "chunk_index": 0,
         "chunk_id": "cs101-a1-3fbc0f07f0-0-3324150f772e",
-        "model_id": "sentence-transformers/all-MiniLM-L12-v2"
+        "model_id": "text-embedding-3-small"
       }
     }
   ]
