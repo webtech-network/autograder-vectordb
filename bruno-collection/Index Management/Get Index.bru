@@ -5,7 +5,11 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/indexes/my-assignment-index
+  url: {{baseUrl}}/indexes/:index_name
   body: none
   auth: none
+}
+
+params:path {
+  index_name: test-index
 }
