@@ -1,4 +1,4 @@
-"""Vector operations routes (search operations)."""
+"""Vector operations routes — query a given index."""
 
 from fastapi import APIRouter, HTTPException
 
@@ -6,65 +6,21 @@ from app.api.schemas import (
     IndexQueryResult,
     QueryIndexRequest,
     QueryIndexResponse,
-    QueryRequest,
-    QueryResponse,
-    QueryResult,
 )
 from app.api.deps import get_embedding_service, get_vector_store_service
 from app.services.index_registry import get_index as registry_get_index
 
-router = APIRouter(prefix="", tags=["Vector Operations"])
+router = APIRouter(prefix="/indexes", tags=["Vector Operations"])
 
 
 @router.post(
-    "/query",
-    response_model=QueryResponse,
-    summary="Query assignment knowledge base",
-    description=(
-        "Embeds the input question locally and performs vector similarity search "
-        "in Upstash filtered by assignment_id."
-    ),
-    responses={
-        200: {"description": "Semantic search completed successfully."},
-        400: {"description": "Invalid query payload."},
-    },
-)
-async def query_knowledge_base(request: QueryRequest) -> QueryResponse:
-    embedding_service = get_embedding_service()
-    vector_store = get_vector_store_service()
-
-    query_vector = embedding_service.embed_text(request.question)
-    matches = vector_store.query(
-        vector=query_vector,
-        assignment_id=request.assignment_id,
-        top_k=request.top_k,
-    )
-
-    results = [
-        QueryResult(
-            id=item.get("id", ""),
-            score=float(item.get("score", 0.0)),
-            text=item.get("data"),
-            metadata=item.get("metadata"),
-        )
-        for item in matches
-    ]
-
-    return QueryResponse(
-        assignment_id=request.assignment_id,
-        question=request.question,
-        results=results,
-    )
-
-
-@router.post(
-    "/indexes/{index_name}/query",
+    "/{index_name}/query",
     response_model=QueryIndexResponse,
-    summary="Retrieve embeddings from an index",
-    description="Query by vector or text. Returns top-k similar vectors.",
+    summary="Query an index",
+    description="Semantic similarity search by text or vector. Returns top-k results.",
     responses={
         200: {"description": "Query completed successfully."},
-        400: {"description": "Invalid request (provide vector or text)."},
+        400: {"description": "Invalid request (provide vector or text, not both)."},
         404: {"description": "Index not found."},
     },
 )

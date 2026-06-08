@@ -1,0 +1,19 @@
+meta {
+  name: Ingest PDF
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/indexes/:index/ingest/pdf
+  body: multipartForm
+  auth: none
+}
+
+params:path {
+  index: test-index
+}
+
+body:multipart-form {
+  files: @file(/path/to/your/document.pdf)
+}

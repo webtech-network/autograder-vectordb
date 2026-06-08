@@ -5,14 +5,17 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/ingest/text
+  url: {{baseUrl}}/indexes/:index/ingest/text
   body: json
   auth: none
 }
 
+params:path {
+  index: test-index
+}
+
 body:json {
   {
-    "assignment_id": "cs101-a1",
     "text": "Students may not use numpy or pandas for Assignment 1. All solutions must use only the Python standard library.",
     "source": "assignment-spec.md"
   }

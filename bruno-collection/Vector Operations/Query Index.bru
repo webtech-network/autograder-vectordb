@@ -5,14 +5,18 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/indexes/my-assignment-index/query
+  url: {{baseUrl}}/indexes/:index/query
   body: json
   auth: none
 }
 
+params:path {
+  index: test-index
+}
+
 body:json {
   {
-    "text": "How should recursion depth be handled?",
+    "text": "What new tasks will be on version 2.1.4 of Omnitool and who suggested changes?",
     "top_k": 5
   }
 }

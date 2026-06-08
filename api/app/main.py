@@ -21,9 +21,8 @@ app = FastAPI(
     title="Autograder RAG Service",
     version="0.1.0",
     description=(
-        "RAG microservice for static assignment knowledge retrieval. "
-        "This service generates embeddings locally using sentence-transformers and "
-        "stores raw vectors in Upstash Vector."
+        "RAG microservice for assignment knowledge retrieval. "
+        "Generates embeddings via OpenAI and stores vectors in Upstash Vector."
     ),
     lifespan=lifespan,
     contact={
@@ -40,11 +39,11 @@ app = FastAPI(
         },
         {
             "name": "Vector Ingestion",
-            "description": "Create, update, and delete vectors (no read).",
+            "description": "Ingest PDF or text into an index.",
         },
         {
             "name": "Vector Operations",
-            "description": "Search operations for vectors.",
+            "description": "Query an index for similar content.",
         },
     ],
 )
