@@ -100,3 +100,24 @@ class VectorStoreService:
         if isinstance(response, dict):
             return int(response.get("deleted", 0))
         return 0
+
+    def delete_by_source(self, index_name: str, source: str) -> int:
+        """Delete all vectors from a specific source within an index.
+
+        Args:
+            index_name: Logical index name.
+            source: Source identifier to delete.
+
+        Returns:
+            Number of deleted vectors.
+        """
+        filter_expr = (
+            f"index_name = '{_escape_filter_value(index_name)}' "
+            f"AND source = '{_escape_filter_value(source)}'"
+        )
+        response = self._index.delete(filter=filter_expr)
+        if hasattr(response, "deleted"):
+            return int(response.deleted)
+        if isinstance(response, dict):
+            return int(response.get("deleted", 0))
+        return 0

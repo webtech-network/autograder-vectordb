@@ -32,7 +32,8 @@ router = APIRouter(prefix="/indexes", tags=["Vector Ingestion"])
     summary="Ingest PDF documents into an index",
     description=(
         "Uploads PDF files, extracts text, splits into chunks, "
-        "generates embeddings via OpenAI, and upserts vectors into the specified index."
+        "generates embeddings via OpenAI, and upserts vectors into the specified index. "
+        "Each file's name is used as the source identifier."
     ),
     responses={
         200: {"description": "Documents were ingested and upserted successfully."},
@@ -45,6 +46,10 @@ async def ingest_pdf(
     files: list[UploadFile] = File(
         ...,
         description="One or more PDF files to ingest.",
+    ),
+    source: str | None = Form(
+        default=None,
+        description="Optional source identifier. If omitted, each file's name is used.",
     ),
 ) -> IngestResponse:
     info = registry_get_index(index_name)
@@ -83,16 +88,17 @@ async def ingest_pdf(
         if not extracted_text.strip():
             continue
 
+        file_source = source or (upload.filename or "unknown")
         chunks = splitter.split_text(extracted_text)
-        file_hash = hashlib.sha1((upload.filename or "unknown").encode("utf-8")).hexdigest()[:10]
+        source_hash = hashlib.sha1(file_source.encode("utf-8")).hexdigest()[:10]
         for idx, chunk in enumerate(chunks):
             chunk_hash = hashlib.sha1(chunk.encode("utf-8")).hexdigest()[:12]
-            chunk_id = f"{index_name}-{file_hash}-{idx}-{chunk_hash}"
+            chunk_id = f"{index_name}-{source_hash}-{idx}-{chunk_hash}"
             all_chunks.append(chunk)
             all_metadata.append(
                 {
                     "index_name": index_name,
-                    "filename": upload.filename or "unknown",
+                    "source": file_source,
                     "chunk_index": idx,
                     "chunk_id": chunk_id,
                 }
@@ -115,6 +121,7 @@ async def ingest_pdf(
 
     return IngestResponse(
         index_name=index_name,
+        source=all_metadata[0]["source"] if all_metadata else "",
         chunk_count=len(all_chunks),
         upserted_count=upserted_count,
     )
@@ -139,7 +146,6 @@ async def ingest_text(index_name: str, request: IngestTextRequest) -> IngestResp
     if info is None:
         raise IndexNotFoundError(f"Index '{index_name}' not found.")
 
-    settings: Settings = get_settings()
     embedding_service = get_embedding_service()
     vector_store = get_vector_store_service()
     splitter = get_text_splitter_service()
@@ -176,6 +182,7 @@ async def ingest_text(index_name: str, request: IngestTextRequest) -> IngestResp
 
     return IngestResponse(
         index_name=index_name,
+        source=request.source,
         chunk_count=len(chunks),
         upserted_count=upserted_count,
     )

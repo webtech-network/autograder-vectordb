@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class IngestResponse(BaseModel):
     index_name: str = Field(description="Index where vectors were upserted.")
+    source: str = Field(description="Source identifier for the ingested content.")
     chunk_count: int = Field(description="Total number of chunks generated.")
     upserted_count: int = Field(description="Total number of vectors upserted.")
 
@@ -19,8 +20,9 @@ class IngestTextRequest(BaseModel):
         description="Raw text to split, embed, and store.",
     )
     source: str = Field(
-        default="raw-text",
-        description="Optional source label for metadata.",
+        ...,
+        min_length=1,
+        description="Source identifier for this content (used for grouping and deletion).",
     )
 
 

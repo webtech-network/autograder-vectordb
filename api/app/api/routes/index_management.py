@@ -90,3 +90,21 @@ async def delete_index(index_name: str) -> dict[str, str | int]:
     deleted_count = vector_store.delete_by_index(index_name)
     registry_delete_index(index_name)
     return {"status": "deleted", "index_name": index_name, "vectors_deleted": deleted_count}
+
+
+@router.delete(
+    "/{index_name}/sources/{source}",
+    summary="Delete vectors by source",
+    description="Delete all vectors from a specific source within an index.",
+    responses={
+        200: {"description": "Vectors from source deleted successfully."},
+        404: {"description": "Index not found."},
+    },
+)
+async def delete_source(index_name: str, source: str) -> dict[str, str | int]:
+    info = registry_get_index(index_name)
+    if info is None:
+        raise IndexNotFoundError(f"Index '{index_name}' not found.")
+    vector_store = get_vector_store_service()
+    deleted_count = vector_store.delete_by_source(index_name, source)
+    return {"status": "deleted", "index_name": index_name, "source": source, "vectors_deleted": deleted_count}
